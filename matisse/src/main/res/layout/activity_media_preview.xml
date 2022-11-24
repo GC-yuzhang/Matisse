@@ -42,8 +42,9 @@
             android:padding="16dp"
             android:layout_gravity="start"
             android:text="@string/button_back"
-            android:textColor="?attr/preview.bottomToolbar.back.textColor"
-            android:textSize="16sp"/>
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:textSize="18sp"/>
 
 
         <LinearLayout
@@ -79,7 +80,7 @@
                     android:layout_gravity="center_vertical"
                     android:enabled="true"
                     android:paddingStart="4dp"
-                    android:paddingLeft="4dp"
+                    android:paddingEnd="4dp"
                     android:text="@string/button_original"
                     android:textColor="?attr/preview.bottomToolbar.back.textColor"
                     android:textSize="14sp" />
@@ -106,9 +107,10 @@
             android:layout_height="wrap_content"
             android:layout_gravity="end"
             android:foreground="?selectableItemBackground"
-            android:padding="16dp"
             android:textColor="?attr/preview.bottomToolbar.apply.textColor"
-            android:textSize="16sp"/>
+            android:padding="16dp"
+            android:textStyle="bold"
+            android:textSize="18sp"/>
 
     </FrameLayout>
 

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?colorPrimary"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        app:titleTextColor="@color/black"
+        app:title="@string/crop"
+        android:theme="?toolbar"
+        >
+        <TextView
+            android:id="@+id/btn_ok"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:foreground="?selectableItemBackground"
+            android:padding="16dp"
+            android:textStyle="bold"
+            android:textColor="@color/main"
+            android:textSize="18sp"
+            android:text="@string/button_ok"/>
+
+    </androidx.appcompat.widget.Toolbar>
+
+    <com.zhihu.matisse.internal.ui.widget.CropImageView
+        android:id="@+id/cv_crop_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+</LinearLayout>

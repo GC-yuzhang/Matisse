@@ -26,23 +26,21 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
 import com.zhihu.matisse.R;
 import com.zhihu.matisse.internal.entity.Album;
 import com.zhihu.matisse.internal.entity.Item;
 import com.zhihu.matisse.internal.entity.SelectionSpec;
 import com.zhihu.matisse.internal.model.AlbumCollection;
 import com.zhihu.matisse.internal.model.SelectedItemCollection;
+import com.zhihu.matisse.internal.ui.AlbumCropActivity;
 import com.zhihu.matisse.internal.ui.AlbumPreviewActivity;
 import com.zhihu.matisse.internal.ui.BasePreviewActivity;
 import com.zhihu.matisse.internal.ui.MediaSelectionFragment;
@@ -72,15 +70,18 @@ public class MatisseActivity extends AppCompatActivity implements
     public static final String EXTRA_RESULT_SELECTION = "extra_result_selection";
     public static final String EXTRA_RESULT_SELECTION_PATH = "extra_result_selection_path";
     public static final String EXTRA_RESULT_ORIGINAL_ENABLE = "extra_result_original_enable";
+    public static final String EXTRA_RESULT_CROP_URI = "extra_result_crop_uri";
+    public static final String EXTRA_RESULT_CROP_PATH = "extra_result_crop_path";
     private static final int REQUEST_CODE_PREVIEW = 23;
     private static final int REQUEST_CODE_CAPTURE = 24;
+    private static final int REQUEST_CODE_CROP = 25;
     public static final String CHECK_STATE = "checkState";
     private final AlbumCollection mAlbumCollection = new AlbumCollection();
     private MediaStoreCompat mMediaStoreCompat;
     private SelectedItemCollection mSelectedCollection = new SelectedItemCollection(this);
     private SelectionSpec mSpec;
 
-    private AlbumsSpinner mAlbumsSpinner;
+//    private AlbumsSpinner mAlbumsSpinner;
     private AlbumsAdapter mAlbumsAdapter;
     private TextView mButtonPreview;
     private TextView mButtonApply;
@@ -118,15 +119,8 @@ public class MatisseActivity extends AppCompatActivity implements
         }
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        ActionBar actionBar = getSupportActionBar();
-        actionBar.setDisplayShowTitleEnabled(false);
-        actionBar.setDisplayHomeAsUpEnabled(true);
-        Drawable navigationIcon = toolbar.getNavigationIcon();
-        TypedArray ta = getTheme().obtainStyledAttributes(new int[]{R.attr.album_element_color});
-        int color = ta.getColor(0, 0);
-        ta.recycle();
-        navigationIcon.setColorFilter(color, PorterDuff.Mode.SRC_IN);
+        toolbar.setNavigationIcon(R.mipmap.icon_back);
+        toolbar.setNavigationOnClickListener(view -> finish());
 
         mButtonPreview = (TextView) findViewById(R.id.button_preview);
         mButtonApply = (TextView) findViewById(R.id.button_apply);
@@ -145,11 +139,11 @@ public class MatisseActivity extends AppCompatActivity implements
         updateBottomToolbar();
 
         mAlbumsAdapter = new AlbumsAdapter(this, null, false);
-        mAlbumsSpinner = new AlbumsSpinner(this);
-        mAlbumsSpinner.setOnItemSelectedListener(this);
-        mAlbumsSpinner.setSelectedTextView((TextView) findViewById(R.id.selected_album));
-        mAlbumsSpinner.setPopupAnchorView(findViewById(R.id.toolbar));
-        mAlbumsSpinner.setAdapter(mAlbumsAdapter);
+//        mAlbumsSpinner = new AlbumsSpinner(this);
+//        mAlbumsSpinner.setOnItemSelectedListener(this);
+//        mAlbumsSpinner.setSelectedTextView((TextView) findViewById(R.id.selected_album));
+//        mAlbumsSpinner.setPopupAnchorView(findViewById(R.id.toolbar));
+//        mAlbumsSpinner.setAdapter(mAlbumsAdapter);
         mAlbumCollection.onCreate(this, this);
         mAlbumCollection.onRestoreInstanceState(savedInstanceState);
         mAlbumCollection.loadAlbums();
@@ -221,18 +215,25 @@ public class MatisseActivity extends AppCompatActivity implements
                 updateBottomToolbar();
             }
         } else if (requestCode == REQUEST_CODE_CAPTURE) {
+
             // Just pass the data back to previous calling Activity.
             Uri contentUri = mMediaStoreCompat.getCurrentPhotoUri();
             String path = mMediaStoreCompat.getCurrentPhotoPath();
 
+            ArrayList<Uri> selectedUris = new ArrayList<>();
+            selectedUris.add(contentUri);
+            ArrayList<String> selectedPaths = new ArrayList<>();
+            selectedPaths.add(path);
+
+            new SingleMediaScanner(this.getApplicationContext(), path, null);
+
+            if (mSpec.needCrop()) {
+                goToCropActivity(selectedUris, selectedPaths);
+                return;
+            }
+
             // Go back if single mode
 //            if (mSpec.singleSelectionModeEnabled()) {
-                new SingleMediaScanner(this.getApplicationContext(), path, null);
-
-                ArrayList<Uri> selectedUris = new ArrayList<>();
-                selectedUris.add(contentUri);
-                ArrayList<String> selectedPaths = new ArrayList<>();
-                selectedPaths.add(path);
                 goBack(selectedUris, selectedPaths);
 //            } else {
 //                new SingleMediaScanner(this.getApplicationContext(), path, () -> {
@@ -240,6 +241,12 @@ public class MatisseActivity extends AppCompatActivity implements
 //                    handler.post(mAlbumCollection::reloadAlbums);
 //                });
 //            }
+        } else if (requestCode == REQUEST_CODE_CROP) {
+            ArrayList<Uri> selectedUris = new ArrayList<>();
+            selectedUris.add(data.getParcelableExtra(EXTRA_RESULT_CROP_URI));
+            ArrayList<String> selectedPaths = new ArrayList<>();
+            selectedPaths.add(data.getStringExtra(EXTRA_RESULT_CROP_PATH));
+            goBack(selectedUris, selectedPaths);
         }
     }
 
@@ -251,8 +258,14 @@ public class MatisseActivity extends AppCompatActivity implements
         finish();
     }
 
-    private void updateBottomToolbar() {
+    private void goToCropActivity(ArrayList<Uri> uris, ArrayList<String> paths) {
+        Intent intent = new Intent(this, AlbumCropActivity.class);
+        intent.putParcelableArrayListExtra(EXTRA_RESULT_SELECTION, uris);
+        intent.putStringArrayListExtra(EXTRA_RESULT_SELECTION_PATH, paths);
+        startActivityForResult(intent, REQUEST_CODE_CROP);
+    }
 
+    private void updateBottomToolbar() {
         int selectedCount = mSelectedCollection.count();
         if (selectedCount == 0) {
             mButtonPreview.setEnabled(false);
@@ -267,16 +280,12 @@ public class MatisseActivity extends AppCompatActivity implements
             mButtonApply.setEnabled(true);
             mButtonApply.setText(getString(R.string.button_apply, selectedCount));
         }
-
-
         if (mSpec.originalable) {
             mOriginalLayout.setVisibility(View.VISIBLE);
             updateOriginalState();
         } else {
             mOriginalLayout.setVisibility(View.INVISIBLE);
         }
-
-
     }
 
     private void updateOriginalState() {
@@ -319,14 +328,13 @@ public class MatisseActivity extends AppCompatActivity implements
             intent.putExtra(BasePreviewActivity.EXTRA_RESULT_ORIGINAL_ENABLE, mOriginalEnable);
             startActivityForResult(intent, REQUEST_CODE_PREVIEW);
         } else if (v.getId() == R.id.button_apply) {
-            Intent result = new Intent();
             ArrayList<Uri> selectedUris = (ArrayList<Uri>) mSelectedCollection.asListOfUri();
-            result.putParcelableArrayListExtra(EXTRA_RESULT_SELECTION, selectedUris);
             ArrayList<String> selectedPaths = (ArrayList<String>) mSelectedCollection.asListOfString();
-            result.putStringArrayListExtra(EXTRA_RESULT_SELECTION_PATH, selectedPaths);
-            result.putExtra(EXTRA_RESULT_ORIGINAL_ENABLE, mOriginalEnable);
-            setResult(RESULT_OK, result);
-            finish();
+            if (mSpec.needCrop()) {
+                goToCropActivity(selectedUris, selectedPaths);
+            } else {
+                goBack(selectedUris, selectedPaths);
+            }
         } else if (v.getId() == R.id.originalLayout) {
             int count = countOverMaxSize();
             if (count > 0) {
@@ -369,8 +377,8 @@ public class MatisseActivity extends AppCompatActivity implements
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(() -> {
             cursor.moveToPosition(mAlbumCollection.getCurrentSelection());
-            mAlbumsSpinner.setSelection(MatisseActivity.this,
-                    mAlbumCollection.getCurrentSelection());
+//            mAlbumsSpinner.setSelection(MatisseActivity.this,
+//                    mAlbumCollection.getCurrentSelection());
             Album album = Album.valueOf(cursor);
             if (album.isAll() && SelectionSpec.getInstance().capture) {
                 album.addCaptureCount();

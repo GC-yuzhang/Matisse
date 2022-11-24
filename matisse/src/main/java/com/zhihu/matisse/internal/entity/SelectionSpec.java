@@ -25,6 +25,7 @@ import com.zhihu.matisse.R;
 import com.zhihu.matisse.engine.ImageEngine;
 import com.zhihu.matisse.engine.impl.GlideEngine;
 import com.zhihu.matisse.filter.Filter;
+import com.zhihu.matisse.internal.ui.widget.CropImageView;
 import com.zhihu.matisse.listener.OnCheckedListener;
 import com.zhihu.matisse.listener.OnSelectedListener;
 
@@ -57,6 +58,13 @@ public final class SelectionSpec {
     public int originalMaxSize;
     public OnCheckedListener onCheckedListener;
     public boolean showPreview;
+
+    public boolean crop;
+    public boolean cropToCircle;
+    public int cropOutputWidth = 600;
+    public int cropOutputHeight = 600;
+    public int focusWidth = 400;
+    public int focusHeight = 400;
 
     private SelectionSpec() {
     }
@@ -113,6 +121,18 @@ public final class SelectionSpec {
 
     public boolean onlyShowGif() {
         return showSingleMediaType && MimeType.ofGif().equals(mimeTypeSet);
+    }
+
+    public boolean needCrop() {
+        return crop && singleSelectionModeEnabled();
+    }
+
+    public CropImageView.Style focusStyle() {
+        if (cropToCircle) {
+            return CropImageView.Style.CIRCLE;
+        } else {
+            return CropImageView.Style.RECTANGLE;
+        }
     }
 
     private static final class InstanceHolder {

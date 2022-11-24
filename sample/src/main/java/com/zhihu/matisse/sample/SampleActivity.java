@@ -25,6 +25,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -82,41 +83,53 @@ public class SampleActivity extends AppCompatActivity implements View.OnClickLis
         switch (v.getId()) {
             case R.id.zhihu:
                 Matisse.from(SampleActivity.this)
-                        .choose(MimeType.ofImage(), false)
-                        .countable(true)
-                        .capture(true)
-                        .captureStrategy(
-                                new CaptureStrategy(true, "com.zhihu.matisse.sample.fileprovider", "test"))
-                        .maxSelectable(9)
-                        .addFilter(new GifSizeFilter(320, 320, 5 * Filter.K * Filter.K))
-                        .gridExpectedSize(
-                                getResources().getDimensionPixelSize(R.dimen.grid_expected_size))
-                        .restrictOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
-                        .thumbnailScale(0.85f)
-                        .imageEngine(new GlideEngine())
-                        .setOnSelectedListener((uriList, pathList) -> {
-                            Log.e("onSelected", "onSelected: pathList=" + pathList);
-                        })
-                        .showSingleMediaType(true)
-                        .originalEnable(true)
-                        .maxOriginalSize(10)
-                        .autoHideToolbarOnSingleTap(true)
-                        .setOnCheckedListener(isChecked -> {
-                            Log.e("isChecked", "onCheck: isChecked=" + isChecked);
-                        })
-                        .forResult(REQUEST_CODE_CHOOSE);
+                    .choose(MimeType.ofImage(), false)
+                    .countable(false)
+                    .capture(true)
+                    .crop(true)
+                    .cropToCircle(true)
+                    .captureStrategy(
+                            new CaptureStrategy(true, "com.zhihu.matisse.sample.fileprovider", "test"))
+                    .maxSelectable(1)
+                    .addFilter(new GifSizeFilter(320, 320, 5 * Filter.K * Filter.K))
+                    .gridExpectedSize(
+                            getResources().getDimensionPixelSize(R.dimen.grid_expected_size))
+                    .restrictOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+                    .thumbnailScale(0.85f)
+                    .imageEngine(new GlideEngine())
+                    .showSingleMediaType(true)
+                    .originalEnable(false)
+                    .maxOriginalSize(1)
+                    .autoHideToolbarOnSingleTap(false)
+                    .forResult(REQUEST_CODE_CHOOSE);
                 break;
             case R.id.dracula:
                 Matisse.from(SampleActivity.this)
-                        .choose(MimeType.ofImage())
-                        .theme(R.style.Matisse_Dracula)
-                        .countable(false)
-                        .addFilter(new GifSizeFilter(320, 320, 5 * Filter.K * Filter.K))
-                        .maxSelectable(9)
-                        .originalEnable(true)
-                        .maxOriginalSize(10)
-                        .imageEngine(new PicassoEngine())
-                        .forResult(REQUEST_CODE_CHOOSE);
+                    .choose(MimeType.ofImage(), false)
+                    .countable(true)
+                    .capture(true)
+                    .crop(false)
+                    .captureStrategy(
+                            new CaptureStrategy(true, "com.zhihu.matisse.sample.fileprovider", "test"))
+                    .maxSelectable(3)
+                    .gridExpectedSize(
+                            getResources().getDimensionPixelSize(R.dimen.grid_expected_size))
+                    .restrictOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+                    .thumbnailScale(0.85f)
+                    .imageEngine(new GlideEngine())
+                    .showSingleMediaType(true)
+                    .autoHideToolbarOnSingleTap(false)
+                    .forResult(REQUEST_CODE_CHOOSE);
+//                Matisse.from(SampleActivity.this)
+//                        .choose(MimeType.ofImage())
+//                        .theme(R.style.Matisse_Dracula)
+//                        .countable(false)
+//                        .addFilter(new GifSizeFilter(320, 320, 5 * Filter.K * Filter.K))
+//                        .maxSelectable(9)
+//                        .originalEnable(true)
+//                        .maxOriginalSize(10)
+//                        .imageEngine(new PicassoEngine())
+//                        .forResult(REQUEST_CODE_CHOOSE);
                 break;
             case R.id.only_gif:
                 Matisse.from(SampleActivity.this)
@@ -174,6 +187,7 @@ public class SampleActivity extends AppCompatActivity implements View.OnClickLis
 
             holder.mUri.setAlpha(position % 2 == 0 ? 1.0f : 0.54f);
             holder.mPath.setAlpha(position % 2 == 0 ? 1.0f : 0.54f);
+            holder.mImage.setImageURI(mUris.get(position));
         }
 
         @Override
@@ -185,11 +199,13 @@ public class SampleActivity extends AppCompatActivity implements View.OnClickLis
 
             private TextView mUri;
             private TextView mPath;
+            private ImageView mImage;
 
             UriViewHolder(View contentView) {
                 super(contentView);
                 mUri = (TextView) contentView.findViewById(R.id.uri);
                 mPath = (TextView) contentView.findViewById(R.id.path);
+                mImage = (ImageView) contentView.findViewById(R.id.image);
             }
         }
     }

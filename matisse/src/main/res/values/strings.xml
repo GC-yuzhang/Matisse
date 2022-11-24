@@ -26,6 +26,8 @@
     <string name="photo_grid_capture">Camera</string>
     <string name="empty_text">No media yet</string>
     <string name="button_ok">OK</string>
+    <string name="choose_pic">Choose picture</string>
+    <string name="crop">Crop</string>
 
     <string name="error_over_count_default">You have reached max selectable</string>
     <string name="error_over_count">You can only select up to %1$d media files</string>

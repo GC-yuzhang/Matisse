@@ -368,4 +368,24 @@ public final class SelectionCreator {
         mSelectionSpec.showPreview = showPreview;
         return this;
     }
+
+    public SelectionCreator crop(boolean crop) {
+        mSelectionSpec.crop = crop;
+        return this;
+    }
+
+    public SelectionCreator cropOutputWidth(int width) {
+        mSelectionSpec.cropOutputWidth = width;
+        return this;
+    }
+
+    public SelectionCreator cropOutputHeight(int height) {
+        mSelectionSpec.cropOutputHeight = height;
+        return this;
+    }
+
+    public SelectionCreator cropToCircle(boolean enable) {
+        mSelectionSpec.cropToCircle = !enable;
+        return this;
+    }
 }
