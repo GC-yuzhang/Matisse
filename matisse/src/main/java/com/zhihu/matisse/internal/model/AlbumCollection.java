@@ -22,10 +22,11 @@ import android.os.Bundle;
 import androidx.fragment.app.FragmentActivity;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.content.Loader;
-
+import com.zhihu.matisse.internal.entity.Album;
 import com.zhihu.matisse.internal.loader.AlbumLoader;
-
+import com.zhihu.matisse.ui.MatisseActivity;
 import java.lang.ref.WeakReference;
+import java.util.Objects;
 
 public class AlbumCollection implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final int LOADER_ID = 1;
@@ -35,6 +36,7 @@ public class AlbumCollection implements LoaderManager.LoaderCallbacks<Cursor> {
     private AlbumCallbacks mCallbacks;
     private int mCurrentSelection;
     private boolean mLoadFinished;
+//    private boolean mNeedReload;
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
@@ -52,11 +54,16 @@ public class AlbumCollection implements LoaderManager.LoaderCallbacks<Cursor> {
         if (context == null) {
             return;
         }
-
         if (!mLoadFinished) {
             mLoadFinished = true;
-            mCallbacks.onAlbumLoad(data);
+            mCallbacks.onAlbumLoaded(data);
+            return;
         }
+
+//        if (mNeedReload) {
+//            mNeedReload = false;
+//            mCallbacks.onAlbumReload(data);
+//        }
     }
 
     @Override
@@ -70,7 +77,7 @@ public class AlbumCollection implements LoaderManager.LoaderCallbacks<Cursor> {
     }
 
     public void onCreate(FragmentActivity activity, AlbumCallbacks callbacks) {
-        mContext = new WeakReference<Context>(activity);
+        mContext = new WeakReference<>(activity);
         mLoaderManager = activity.getSupportLoaderManager();
         mCallbacks = callbacks;
     }
@@ -98,6 +105,11 @@ public class AlbumCollection implements LoaderManager.LoaderCallbacks<Cursor> {
         mLoaderManager.initLoader(LOADER_ID, null, this);
     }
 
+//    public void reloadAlbums() {
+//        mNeedReload = true;
+//        mLoaderManager.restartLoader(LOADER_ID, null, this);
+//    }
+
     public int getCurrentSelection() {
         return mCurrentSelection;
     }
@@ -107,8 +119,8 @@ public class AlbumCollection implements LoaderManager.LoaderCallbacks<Cursor> {
     }
 
     public interface AlbumCallbacks {
-        void onAlbumLoad(Cursor cursor);
-
+        void onAlbumLoaded(Cursor cursor);
+//        void onAlbumReload(Cursor cursor);
         void onAlbumReset();
     }
 }

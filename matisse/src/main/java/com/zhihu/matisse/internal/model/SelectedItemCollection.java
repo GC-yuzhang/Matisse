@@ -173,8 +173,7 @@ public class SelectedItemCollection {
 
             try {
                 cause = mContext.getResources().getQuantityString(
-                        R.plurals.error_over_count,
-                        maxSelectable,
+                        R.string.error_over_count,
                         maxSelectable
                 );
             } catch (Resources.NotFoundException e) {

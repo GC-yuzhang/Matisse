@@ -47,14 +47,10 @@ public class AlbumsSpinner {
         mListPopupWindow.setHorizontalOffset((int) (16 * density));
         mListPopupWindow.setVerticalOffset((int) (-48 * density));
 
-        mListPopupWindow.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                AlbumsSpinner.this.onItemSelected(parent.getContext(), position);
-                if (mOnItemSelectedListener != null) {
-                    mOnItemSelectedListener.onItemSelected(parent, view, position, id);
-                }
+        mListPopupWindow.setOnItemClickListener((parent, view, position, id) -> {
+            AlbumsSpinner.this.onItemSelected(parent.getContext(), position);
+            if (mOnItemSelectedListener != null) {
+                mOnItemSelectedListener.onItemSelected(parent, view, position, id);
             }
         });
     }
@@ -87,7 +83,6 @@ public class AlbumsSpinner {
                 mSelected.setVisibility(View.VISIBLE);
                 mSelected.setText(displayName);
             }
-
         }
     }
 

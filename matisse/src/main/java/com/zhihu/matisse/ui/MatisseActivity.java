@@ -22,7 +22,6 @@ import android.database.Cursor;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -32,7 +31,6 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -92,6 +90,8 @@ public class MatisseActivity extends AppCompatActivity implements
     private LinearLayout mOriginalLayout;
     private CheckRadioView mOriginal;
     private boolean mOriginalEnable;
+
+    private MediaSelectionFragment mediaSelectionFragment;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -215,10 +215,8 @@ public class MatisseActivity extends AppCompatActivity implements
                 finish();
             } else {
                 mSelectedCollection.overwrite(selected, collectionType);
-                Fragment mediaSelectionFragment = getSupportFragmentManager().findFragmentByTag(
-                        MediaSelectionFragment.class.getSimpleName());
-                if (mediaSelectionFragment instanceof MediaSelectionFragment) {
-                    ((MediaSelectionFragment) mediaSelectionFragment).refreshMediaGrid();
+                if (mediaSelectionFragment != null) {
+                    mediaSelectionFragment.refreshMediaGrid();
                 }
                 updateBottomToolbar();
             }
@@ -226,25 +224,31 @@ public class MatisseActivity extends AppCompatActivity implements
             // Just pass the data back to previous calling Activity.
             Uri contentUri = mMediaStoreCompat.getCurrentPhotoUri();
             String path = mMediaStoreCompat.getCurrentPhotoPath();
-            ArrayList<Uri> selected = new ArrayList<>();
-            selected.add(contentUri);
-            ArrayList<String> selectedPath = new ArrayList<>();
-            selectedPath.add(path);
-            Intent result = new Intent();
-            result.putParcelableArrayListExtra(EXTRA_RESULT_SELECTION, selected);
-            result.putStringArrayListExtra(EXTRA_RESULT_SELECTION_PATH, selectedPath);
-            setResult(RESULT_OK, result);
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
-                MatisseActivity.this.revokeUriPermission(contentUri,
-                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-            new SingleMediaScanner(this.getApplicationContext(), path, new SingleMediaScanner.ScanListener() {
-                @Override public void onScanFinish() {
-                    Log.i("SingleMediaScanner", "scan finish!");
-                }
-            });
-            finish();
+            // Go back if single mode
+//            if (mSpec.singleSelectionModeEnabled()) {
+                new SingleMediaScanner(this.getApplicationContext(), path, null);
+
+                ArrayList<Uri> selectedUris = new ArrayList<>();
+                selectedUris.add(contentUri);
+                ArrayList<String> selectedPaths = new ArrayList<>();
+                selectedPaths.add(path);
+                goBack(selectedUris, selectedPaths);
+//            } else {
+//                new SingleMediaScanner(this.getApplicationContext(), path, () -> {
+//                    Handler handler = new Handler(Looper.getMainLooper());
+//                    handler.post(mAlbumCollection::reloadAlbums);
+//                });
+//            }
         }
+    }
+
+    private void goBack(ArrayList<Uri> selectedUris, ArrayList<String> selectedPaths) {
+        Intent result = new Intent();
+        result.putParcelableArrayListExtra(EXTRA_RESULT_SELECTION, selectedUris);
+        result.putStringArrayListExtra(EXTRA_RESULT_SELECTION_PATH, selectedPaths);
+        setResult(RESULT_OK, result);
+        finish();
     }
 
     private void updateBottomToolbar() {
@@ -275,7 +279,6 @@ public class MatisseActivity extends AppCompatActivity implements
 
     }
 
-
     private void updateOriginalState() {
         mOriginal.setChecked(mOriginalEnable);
         if (countOverMaxSize() > 0) {
@@ -291,7 +294,6 @@ public class MatisseActivity extends AppCompatActivity implements
             }
         }
     }
-
 
     private int countOverMaxSize() {
         int count = 0;
@@ -361,25 +363,39 @@ public class MatisseActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onAlbumLoad(final Cursor cursor) {
+    public void onAlbumLoaded(final Cursor cursor) {
         mAlbumsAdapter.swapCursor(cursor);
         // select default album.
         Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-
-            @Override
-            public void run() {
-                cursor.moveToPosition(mAlbumCollection.getCurrentSelection());
-                mAlbumsSpinner.setSelection(MatisseActivity.this,
-                        mAlbumCollection.getCurrentSelection());
-                Album album = Album.valueOf(cursor);
-                if (album.isAll() && SelectionSpec.getInstance().capture) {
-                    album.addCaptureCount();
-                }
-                onAlbumSelected(album);
+        handler.post(() -> {
+            cursor.moveToPosition(mAlbumCollection.getCurrentSelection());
+            mAlbumsSpinner.setSelection(MatisseActivity.this,
+                    mAlbumCollection.getCurrentSelection());
+            Album album = Album.valueOf(cursor);
+            if (album.isAll() && SelectionSpec.getInstance().capture) {
+                album.addCaptureCount();
             }
+            onAlbumSelected(album);
         });
     }
+
+//    @Override
+//    public void onAlbumReload(final Cursor cursor) {
+//        // update album when multi model
+//        if (!mSpec.singleSelectionModeEnabled() && mediaSelectionFragment != null) {
+//            mAlbumsAdapter.swapCursor(cursor);
+//            // select default album.
+//            Handler handler = new Handler(Looper.getMainLooper());
+//            handler.post(() -> {
+//                cursor.moveToPosition(mAlbumCollection.getCurrentSelection());
+//                Album album = Album.valueOf(cursor);
+//                if (album.isAll() && SelectionSpec.getInstance().capture) {
+//                    album.addCaptureCount();
+//                }
+//                mediaSelectionFragment.reload(album, mSpec.capture);
+//            });
+//        }
+//    }
 
     @Override
     public void onAlbumReset() {
@@ -393,10 +409,17 @@ public class MatisseActivity extends AppCompatActivity implements
         } else {
             mContainer.setVisibility(View.VISIBLE);
             mEmptyView.setVisibility(View.GONE);
-            Fragment fragment = MediaSelectionFragment.newInstance(album);
+
+            if (mediaSelectionFragment != null) {
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .remove(mediaSelectionFragment)
+                        .commitAllowingStateLoss();
+            }
+            mediaSelectionFragment = MediaSelectionFragment.newInstance(album);
             getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.container, fragment, MediaSelectionFragment.class.getSimpleName())
+                    .add(R.id.container, mediaSelectionFragment, MediaSelectionFragment.class.getSimpleName())
                     .commitAllowingStateLoss();
         }
     }

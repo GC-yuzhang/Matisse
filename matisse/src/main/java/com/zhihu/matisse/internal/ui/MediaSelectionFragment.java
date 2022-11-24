@@ -119,6 +119,10 @@ public class MediaSelectionFragment extends Fragment implements
         mAlbumMediaCollection.onDestroy();
     }
 
+//    public void reload(Album album, boolean captureEnable) {
+//        mAlbumMediaCollection.load(album, captureEnable);
+//    }
+
     public void refreshMediaGrid() {
         mAdapter.notifyDataSetChanged();
     }
